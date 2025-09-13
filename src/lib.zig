@@ -62,12 +62,12 @@ pub fn detect_backend() Backend {
     return .cpu;
 }
 
-pub fn matmul_f32_backend(backend: Backend, out: []f32, w: []const f32, x: []const f32, n: usize, d: usize) void {
+pub fn matmul_f32_backend(backend: Backend, out: []f32, w: []const f32, x: []const f32, n: usize, d: usize) !void {
     switch (backend) {
         .cpu => Kernels.matmul_f32(out, w, x, n, d),
         .metal => {
-            var ctx = metal.MetalContext.init();
-            metal.matmul_f32(&ctx, out, w, x, n, d);
+            var ctx = try metal.MetalContext.init();
+            try metal.matmul_f32(&ctx, out, w, x, n, d);
         },
     }
 }
@@ -95,7 +95,7 @@ test "metal backend matmul matches cpu" {
     var out_cpu: [d]f32 = undefined;
     var out_metal: [d]f32 = undefined;
     Kernels.matmul_f32(out_cpu[0..], w[0..], x[0..], n, d);
-    matmul_f32_backend(.metal, out_metal[0..], w[0..], x[0..], n, d);
+    try matmul_f32_backend(.metal, out_metal[0..], w[0..], x[0..], n, d);
     i = 0;
     while (i < d) : (i += 1) try std.testing.expectApproxEqAbs(out_cpu[i], out_metal[i], 1e-6);
 }
